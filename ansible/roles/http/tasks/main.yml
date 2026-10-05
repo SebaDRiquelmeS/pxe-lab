@@ -1,0 +1,49 @@
+---
+- name: Instalar nginx
+  ansible.builtin.package:
+    name: nginx
+    state: present
+
+- name: Desactivar sitio por defecto de nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reiniciar nginx
+
+- name: Crear configuracion del sitio pxe-lab
+  ansible.builtin.template:
+    src: pxe-lab.conf.j2
+    dest: /etc/nginx/sites-available/pxe-lab.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reiniciar nginx
+
+- name: Activar sitio pxe-lab
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/pxe-lab.conf
+    dest: /etc/nginx/sites-enabled/pxe-lab.conf
+    state: link
+  notify: reiniciar nginx
+
+- name: Asegurar directorio HTTP
+  ansible.builtin.file:
+    path: /srv/http
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Desactivar socket de activacion de nginx
+  ansible.builtin.systemd:
+    name: nginx.socket
+    state: stopped
+    enabled: false
+  failed_when: false
+  notify: reiniciar nginx
+
+- name: Habilitar e iniciar nginx
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started

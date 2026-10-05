@@ -1,0 +1,28 @@
+---
+- name: Instalar nftables
+  ansible.builtin.package:
+    name: nftables
+    state: present
+
+- name: Habilitar IP forwarding persistente
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Configurar nftables
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: recargar nftables
+
+- name: Habilitar e iniciar nftables
+  ansible.builtin.systemd:
+    name: nftables
+    enabled: true
+    state: started

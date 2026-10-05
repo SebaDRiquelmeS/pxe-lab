@@ -1,0 +1,28 @@
+---
+- name: Configurar servidor PXE
+  hosts: servidor
+  become: true
+  vars:
+    nat_out_iface: ens3
+    nat_internal_iface: ens4
+    dnsmasq_iface: ens4
+    dhcp_range_start: 192.168.50.100
+    dhcp_range_end: 192.168.50.200
+    dhcp_netmask: 255.255.255.0
+    dhcp_lease: 12h
+    dhcp_gateway: 192.168.50.1
+    dns_upstream_1: 1.1.1.1
+    dns_upstream_2: 8.8.8.8
+    http_listen_ip: 192.168.50.1
+    ssh_key_pub: "{{ lookup('file', lookup('env', 'HOME') ~ '/pxe-lab/id_pxe.pub') }}"
+  pre_tasks:
+    - name: Actualizar cache de apt
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  roles:
+    - nat
+    - dnsmasq
+    - http
+    - pxe

@@ -1,0 +1,28 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        oif "{{ nat_out_iface }}" masquerade
+    }
+}
+
+table ip filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        iif "lo" accept
+        ct state established,related accept
+        ip protocol icmp accept
+        iif "{{ nat_internal_iface }}" udp dport { 67, 68, 53, 69 } accept
+        iif "{{ nat_internal_iface }}" tcp dport { 53, 80 } accept
+        iif "{{ nat_out_iface }}" tcp dport 22 accept
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+        ct state established,related accept
+        iif "{{ nat_internal_iface }}" oif "{{ nat_out_iface }}" accept
+    }
+}

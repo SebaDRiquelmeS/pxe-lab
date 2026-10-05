@@ -1,0 +1,27 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: latam
+  network:
+    version: 2
+    ethernets:
+      ens3:
+        dhcp4: true
+  storage:
+    layout:
+      name: direct
+      match:
+        path: /dev/vda
+  identity:
+    hostname: cliente
+    username: ubuntu
+    password: "{{ autoinstall_password_hash }}"
+  ssh:
+    install-server: true
+    authorized-keys:
+      - {{ ssh_key_pub }}
+  packages:
+    - openssh-server
+  shutdown: poweroff

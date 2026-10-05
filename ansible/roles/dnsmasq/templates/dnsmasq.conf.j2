@@ -1,0 +1,17 @@
+interface={{ dnsmasq_iface }}
+bind-interfaces
+
+# DHCP
+dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ dhcp_netmask }},{{ dhcp_lease }}
+dhcp-option=3,{{ dhcp_gateway }}
+dhcp-option=6,{{ dhcp_gateway }}
+dhcp-boot=pxelinux.0
+
+# DNS
+no-resolv
+server={{ dns_upstream_1 }}
+server={{ dns_upstream_2 }}
+
+# TFTP
+enable-tftp
+tftp-root=/srv/tftp

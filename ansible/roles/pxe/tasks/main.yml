@@ -1,0 +1,103 @@
+---
+- name: Instalar paquetes PXE
+  ansible.builtin.package:
+    name:
+      - pxelinux
+      - syslinux-common
+      - syslinux-efi
+    state: present
+
+- name: Copiar pxelinux.0
+  ansible.builtin.copy:
+    src: /usr/lib/PXELINUX/pxelinux.0
+    dest: /srv/tftp/pxelinux.0
+    remote_src: true
+    mode: '0644'
+
+- name: Copiar modulos de syslinux
+  ansible.builtin.copy:
+    src: "/usr/lib/syslinux/modules/bios/{{ item }}"
+    dest: "/srv/tftp/{{ item }}"
+    remote_src: true
+    mode: '0644'
+  loop:
+    - ldlinux.c32
+    - libutil.c32
+    - menu.c32
+
+- name: Crear directorio pxelinux.cfg
+  ansible.builtin.file:
+    path: /srv/tftp/pxelinux.cfg
+    state: directory
+    mode: '0755'
+
+- name: Configurar menu de arranque PXE
+  ansible.builtin.template:
+    src: pxelinux_default.j2
+    dest: /srv/tftp/pxelinux.cfg/default
+    mode: '0644'
+
+- name: Crear directorio autoinstall
+  ansible.builtin.file:
+    path: /srv/http/autoinstall
+    state: directory
+    mode: '0755'
+
+- name: Crear meta-data vacio
+  ansible.builtin.copy:
+    content: ""
+    dest: /srv/http/autoinstall/meta-data
+    mode: '0644'
+
+- name: Crear user-data de autoinstall
+  ansible.builtin.template:
+    src: autoinstall_userdata.j2
+    dest: /srv/http/autoinstall/user-data
+    mode: '0644'
+
+- name: Determinar ISO actual de Ubuntu 22.04
+  ansible.builtin.shell: |
+    set -o pipefail
+    wget -qO- https://releases.ubuntu.com/22.04/SHA256SUMS | \
+      awk '/ubuntu-22\.04\.[0-9]+-live-server-amd64\.iso/{print $1, $2; exit}'
+  args:
+    executable: /bin/bash
+  register: iso_info
+  changed_when: false
+  check_mode: false
+
+- name: Descargar ISO de Ubuntu
+  ansible.builtin.get_url:
+    url: "https://releases.ubuntu.com/22.04/{{ iso_info.stdout.split()[1] | regex_replace('^\\*', '') }}"
+    dest: /srv/http/jammy.iso
+    checksum: "sha256:{{ iso_info.stdout.split()[0] }}"
+    mode: '0644'
+
+- name: Crear punto de montaje temporal
+  ansible.builtin.file:
+    path: /mnt/iso
+    state: directory
+    mode: '0755'
+
+- name: Montar ISO
+  ansible.posix.mount:
+    path: /mnt/iso
+    src: /srv/http/jammy.iso
+    fstype: iso9660
+    opts: ro,loop
+    state: mounted
+
+- name: Copiar kernel e initrd al TFTP
+  ansible.builtin.copy:
+    src: "/mnt/iso/casper/{{ item }}"
+    dest: "/srv/tftp/{{ item }}"
+    remote_src: true
+    mode: '0644'
+  loop:
+    - vmlinuz
+    - initrd
+
+- name: Desmontar ISO
+  ansible.posix.mount:
+    path: /mnt/iso
+    state: unmounted

@@ -1,0 +1,10 @@
+server {
+    listen {{ http_listen_ip }}:80;
+    server_name _;
+    root /srv/http;
+    autoindex on;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

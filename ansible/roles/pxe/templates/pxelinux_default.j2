@@ -1,0 +1,5 @@
+DEFAULT install
+LABEL install
+  KERNEL vmlinuz
+  INITRD initrd
+  APPEND ip=dhcp url=http://192.168.50.1/jammy.iso autoinstall cloud-config-url=http://192.168.50.1/autoinstall/user-data ds=nocloud-net;seedfrom=http://192.168.50.1/autoinstall/ ---

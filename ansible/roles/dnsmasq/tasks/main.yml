@@ -1,0 +1,35 @@
+---
+- name: Instalar dnsmasq
+  ansible.builtin.package:
+    name: dnsmasq
+    state: present
+
+- name: Configurar dnsmasq para PXE
+  ansible.builtin.template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dnsmasq.d/pxe-lab.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reiniciar dnsmasq
+
+- name: Desactivar DNS stub de systemd-resolved
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: '^#?DNSStubListener='
+    line: 'DNSStubListener=no'
+  notify: reiniciar systemd-resolved
+
+- name: Asegurar directorio TFTP
+  ansible.builtin.file:
+    path: /srv/tftp
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Habilitar e iniciar dnsmasq
+  ansible.builtin.systemd:
+    name: dnsmasq
+    enabled: true
+    state: started

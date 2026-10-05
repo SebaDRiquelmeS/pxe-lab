@@ -1,0 +1,27 @@
+# Claves SSH generadas localmente (no deben compartirse)
+id_pxe
+id_pxe.pub
+
+# Imagenes y volumenes de VM (grandes y recreables)
+images/
+
+# Assets descargados/transferibles
+pxe-assets/
+
+# Inventario generado automaticamente
+ansible/inventory.ini
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfplan
+# NOTA: .terraform.lock.hcl SI se versiona para reproducibilidad
+
+# Backups y logs locales
+*.log
+*.bak
+*.tmp
+
+# Capturas de pantalla de debug
+/tmp/opencode/*.ppm
